@@ -50,6 +50,22 @@ def update():
         issues = json.loads(open("/data/issues.json", "r").read())
 
 
+def draw_issue(issue, x, y):
+    global graphics
+    global WIDTH
+    global HEIGHT
+
+    if issue['status'] == 'In Progress':
+        graphics.set_pen(inky_frame.BLUE)
+    else:
+        graphics.set_pen(graphics.create_pen(170, 170, 170))
+    graphics.rectangle(x, y, 5, 50)
+
+    graphics.set_pen(inky_frame.BLACK)
+    graphics.text(text=issue['title'], x1=(x + 20), y1=y, wordwrap=350, scale=2)
+    graphics.text(text=issue['sprint'], x1=(x + 20), y1=(y + 40), wordwrap=350, scale=1)
+
+
 def draw():
     global issues
     global status
@@ -73,21 +89,19 @@ def draw():
     #    { "time": "09:30", "title": "Team call - discussing things that might cause word wrapping" },
     #]
     
-    y_offset = 110
+    y_offset = 120
     index = 0
 
     for issue in issues['In Progress']:
-        graphics.text(text=issue['title'], x1=10, y1=(y_offset + (index * 25) + (index * 10)), scale=2)
+        draw_issue(issue, 10, y_offset + (index * 60))
         index = index + 1
-        graphics.text(text=issue['sprint'], x1=10, y1=(y_offset + ((index + 1) * 25) + (index * 10)), scale=1)
             
-    y_offset = 300
+    y_offset = y_offset + (index * 60) + 20
     index = 0
 
     for issue in issues['Todo']:
-        graphics.text(text=issue['title'], x1=10, y1=(y_offset + (index * 25) + (index * 10)), scale=2)
+        draw_issue(issue, 10, y_offset + (index * 60))
         index = index + 1
-        graphics.text(text=issue['sprint'], x1=10, y1=(y_offset + ((index + 1) * 25) + (index * 10)), scale=1)
 
     # Draw status message
     graphics.text(text=' '.join(status), x1=10, y1=HEIGHT - 20, wordwrap=(WIDTH - 75), scale=1)
