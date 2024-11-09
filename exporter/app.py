@@ -1,13 +1,12 @@
 import os
 import json
 import requests
-import boto3
 import socket
 import platform
 import getpass
 from datetime import datetime, timedelta
 from typing import Dict, List, Any
-
+from webdav3.client import Client
 
 def transform_data(data: Dict[str, Any], project_filter: str) -> Dict[str, List[Dict[str, Any]]]:
     """
@@ -31,18 +30,19 @@ def transform_data(data: Dict[str, Any], project_filter: str) -> Dict[str, List[
                 "title") if project_node.get("sprint") else None
 
             if project_title == project_filter and sprint_title is not None:
-                hours = project_node.get("hours")
-                hours_value = hours.get(
-                    "number") if hours is not None else None
+                # hours = project_node.get("hours")
+                # hours_value = hours.get(
+                #     "number") if hours is not None else None
 
                 # Transform the node
                 transformed_node = {
                     "title": node["title"],
                     "sprint": project_node.get("sprint", {}).get("title"),
                     "status": project_node.get("status", {}).get("value"),
-                    "hours": hours_value,
-                    "project": project_node.get("project", {}).get("title"),
-                    "activity": project_node.get("activity", {}).get("value")
+                    # "hours": hours_value,
+                    # "project": project_node.get("project", {}).get("title"),
+                    # "activity": project_node.get("activity", {}).get("value"),
+                    "repository": node.get("repository", {}).get("nameWithOwner"),
                 }
                 filtered_nodes.append(transformed_node)
                 break  # Found a matching project, no need to check others
@@ -68,13 +68,16 @@ def main():
     # GitHub API configuration
     token = os.environ["GITHUB_TOKEN"]
     project_filter = os.environ.get("FRAME_PROJECT_FILTER", "My Team Project")
+    webdav_url = os.environ["WEBDAV_URL"]
+    webdav_username = os.environ["WEBDAV_USERNAME"]
+    webdav_password = os.environ["WEBDAV_PASSWORD"]
 
-    two_weeks_ago = (datetime.utcnow() - timedelta(weeks=2)).isoformat() + "Z"
+    # two_weeks_ago = (datetime.utcnow() - timedelta(weeks=2)).isoformat() + "Z"
 
     query = load_query()
     variables = {
         "login": "monodot",
-        "since": two_weeks_ago
+        # "since": two_weeks_ago
     }
 
     url = "https://api.github.com/graphql"
@@ -111,22 +114,26 @@ def main():
                 "user": getpass.getuser(),
             },
         },
-        "data": transformed_data
+        "data": {
+            "issues": transformed_data,
+            "events": []
+        }
     }
 
     # Write to local file
     with open("work.json", "w") as f:
         json.dump(output, f, indent=2)
 
-    # Upload to S3
-    s3 = boto3.client('s3')
-    s3.upload_file(
-        'work.json',
-        'monodot-data',
-        'work.json'
-    )
+    # Upload via WebDAV
+    options = {
+        'webdav_hostname': webdav_url,
+        'webdav_login':    webdav_username,
+        'webdav_password': webdav_password
+    }
+    client = Client(options)
+    client.upload_sync(remote_path="data/work.json", local_path="work.json")
 
-    print("Successfully uploaded work file to S3")
+    print("Successfully uploaded work file to WebDAV")
 
 
 if __name__ == "__main__":

@@ -1,3 +1,5 @@
+secrets.py
+
 #Maven
 target/
 pom.xml.tag
@@ -63,3 +65,4 @@ issues.json
 # IDE settings
 .vscode/
 .idea/
+.aider*

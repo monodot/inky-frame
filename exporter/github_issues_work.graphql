@@ -1,7 +1,11 @@
-query UserIssuesWithProjectInfo($login: String!, $since: DateTime!) {
+query UserIssuesWithProjectInfo($login: String!) {
   user(login: $login) {
-    issues(first: 50, filterBy: {assignee: $login, states: [OPEN], since: $since}, orderBy: {field: UPDATED_AT, direction: DESC}) {
-			totalCount
+    issues(
+      first: 50
+      filterBy: { assignee: $login, states: [OPEN] }
+      orderBy: { field: UPDATED_AT, direction: DESC }
+    ) {
+      totalCount
       pageInfo {
         hasNextPage
         endCursor
