@@ -1,15 +1,5 @@
-# ticker
+# Inky Frame Exporter
 
-A program that fetches data and crunches it in a format ready for consumption by the personal dashboard device.
+Data export service that fetches GitHub issues and calendar data, processes it, and uploads to WebDAV for the Inky Frame display.
 
-```
-python -m venv venv
-
-source venv/bin/activate
-
-source .env
-
-pip install -r requirements.txt
-
-python app.py
-```
+See the main README.md for setup and usage instructions.

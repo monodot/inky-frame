@@ -25,6 +25,25 @@ graph LR
 1.  When you've changed a file, select `main.py` and press the **Run** button to start Inky Frame from scratch.
 
 
+### Setting up the Exporter
+
+1. Create and activate a virtual environment:
+```
+python -m venv venv
+source venv/bin/activate
+```
+
+2. Set up environment variables:
+```
+source .env
+```
+
+3. Install dependencies and run:
+```
+pip install -r requirements.txt
+python app.py
+```
+
 ### Developing with aider
 
 ```
@@ -33,10 +52,8 @@ echo 'anthropic-api-key: KEY' > ~/.aider.conf.yml
 aider client/work.py
 ```
 
-
 ### Weird things
 
 - Sometimes Thonny doesn't recognise the Inky Frame at all. Try unplugging, plugging back in again, and then pressing the Stop/Reset button in Thonny.
-
 
 
