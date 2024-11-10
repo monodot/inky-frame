@@ -4,6 +4,7 @@ Displays tasks and calendar events from a remote JSON source
 """
 
 import time
+from micropython import const
 import inky_frame
 import inky_helper as ih
 import urequests as requests
@@ -11,9 +12,15 @@ import ujson
 from secrets import WEBDAV_AUTHORIZATION
 
 # Configuration constants
-UPDATE_INTERVAL = 60  # in minutes
-DATA_URL = "https://myfiles.fastmail.com/data/work.json"
-MAX_ISSUES = 5  # maximum number of issues to display
+UPDATE_INTERVAL = const(60)  # in minutes
+DATA_URL = const("https://myfiles.fastmail.com/data/work.json")
+MAX_ISSUES = const(5)  # maximum number of issues to display
+MAX_RETRIES = const(3)
+RETRY_DELAY = const(5)  # seconds between retries
+
+class DashboardError(Exception):
+    """Base exception for dashboard-related errors"""
+    pass
 
 # Display objects passed by launcher
 graphics = None
@@ -28,35 +35,58 @@ def update():
     """
     Fetch latest work data from remote WebDAV source and update local cache.
     Updates global data and status variables.
+    
+    Raises:
+        DashboardError: If there are issues fetching or processing the data
     """
     global data
     global status
     
-    # Get work data from WebDAV
-    try:
-        print("Fetching issues from {}".format(DATA_URL))
-        response = requests.get(DATA_URL, headers={
-            'Authorization': "Basic {}".format(WEBDAV_AUTHORIZATION),
-        })
-        
-        # Read the complete response content
-        content = response.text
-        response.close()  # Explicitly close the response
-        
-        print(content)
-        
-        # Write to file using context manager
-        with open("/data/work.json", "w") as f:
-            f.write(content)
-            f.flush()
+    status = []  # Clear previous status messages
+    
+    # Get work data from WebDAV with retries
+    for attempt in range(MAX_RETRIES):
+        try:
+            print(f"Fetching issues from {DATA_URL} (attempt {attempt + 1}/{MAX_RETRIES})")
+            response = requests.get(DATA_URL, headers={
+                'Authorization': f"Basic {WEBDAV_AUTHORIZATION}",
+            })
+            
+            if response.status_code != 200:
+                raise DashboardError(f"HTTP error {response.status_code}")
+                
+            # Read the complete response content
+            content = response.text
+            response.close()  # Explicitly close the response
+            
+            # Validate JSON before writing
+            try:
+                ujson.loads(content)  # Test parse
+            except ValueError as e:
+                raise DashboardError(f"Invalid JSON in response: {e}")
+            
+            # Write to file using context manager
+            try:
+                with open("/data/work.json", "w") as f:
+                    f.write(content)
+                    f.flush()
+                print("Local issues file updated")
+                break  # Success, exit retry loop
+                
+            except OSError as e:
+                raise DashboardError(f"Failed to write cache file: {e}")
+                
+        except (OSError, DashboardError) as e:
+            print(f"Attempt {attempt + 1} failed: {str(e)}")
+            if attempt < MAX_RETRIES - 1:
+                print(f"Retrying in {RETRY_DELAY} seconds...")
+                time.sleep(RETRY_DELAY)
+            else:
+                error_msg = f"Failed to fetch data after {MAX_RETRIES} attempts: {str(e)}"
+                print(error_msg)
+                status.append(error_msg)
 
-        print("Local issues file updated")
-
-    except OSError as e:
-        print("Could not get latest work data")
-        status.append("Could not get latest work data: {}".format(e))
-
-
+    # Try to load cached data
     try:
         if ih.file_exists("/data/work.json"):
             with open("/data/work.json", "r") as f:
@@ -64,17 +94,23 @@ def update():
             try:
                 data = ujson.loads(file_content)
             except ValueError as e:
-                print("Could not parse JSON content: {}".format(e))
-                status.append("JSON parse error: {}".format(e))
+                error_msg = f"Failed to parse cached JSON: {e}"
+                print(error_msg)
+                status.append(error_msg)
+                data = {"data": {"issues": {}, "events": []}}  # Empty default data
+        else:
+            print("No cached data found")
+            data = {"data": {"issues": {}, "events": []}}
+            
     except OSError as e:
-        print("Could not read file: {}".format(e))
-        status.append("File read error: {}".format(e))
+        error_msg = f"Failed to read cache file: {e}"
+        print(error_msg)
+        status.append(error_msg)
+        data = {"data": {"issues": {}, "events": []}}
 
-    print("Finished fetching new data")
-    
+    # Add timestamp to status
     year, month, day, hour, mins, secs, weekday, yearday = time.localtime()
-    
-    status.append("Last refreshed: {}-{:02d}-{:02d} {:02d}:{:02d}.".format(year, month, day, hour, mins))
+    status.append(f"Last refreshed: {year}-{month:02d}-{day:02d} {hour:02d}:{mins:02d}")
 
 
 def draw_issue(issue, x, y):
