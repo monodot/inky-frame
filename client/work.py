@@ -129,8 +129,11 @@ def draw_issue(issue, x, y):
     graphics.rectangle(x, y, 5, 50)
 
     graphics.set_pen(inky_frame.BLACK)
-    graphics.text(text=issue['title'], x1=(x + 20), y1=y, wordwrap=350, scale=2)
-    graphics.text(text=issue['repository'], x1=(x + 20), y1=(y + 40), wordwrap=350, scale=1)
+    title = issue['title']
+    if len(title) > 35:
+        title = title[:35] + '...'
+    graphics.text(text=title, x1=(x + 20), y1=y, scale=2)
+    graphics.text(text=issue['repository'], x1=(x + 20), y1=(y + 25), wordwrap=350, scale=1)
 
 
 def draw_event(event, x, y, width):
