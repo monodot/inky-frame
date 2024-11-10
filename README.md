@@ -1,5 +1,15 @@
 # inky-frame
 
+A personal dashboard for the Pimoroni Inky Frame e-paper display that shows GitHub project issues and calendar events. The system fetches data from GitHub, processes it through a WebDAV server, and displays it beautifully on the e-paper screen.
+
+```mermaid
+graph LR
+    A[GitHub API] --> B[Exporter]
+    B --> C[WebDAV Server]
+    C --> D[Inky Frame Client]
+    D --> E[E-paper Display]
+```
+
 ## Developing
 
 1.  Install Thonny: `bash <(wget -O - https://thonny.org/installer-for-linux)`
