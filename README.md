@@ -1,6 +1,18 @@
 # inky-frame
 
-A personal dashboard for the Pimoroni Inky Frame e-paper display that shows GitHub project issues and calendar events. The system fetches data from GitHub, processes it through a WebDAV server, and displays it beautifully on the e-paper screen.
+This is the code for a personal dashboard on Pimoroni's Inky Frame e-paper display, which shows:
+
+- your GitHub issues in a particular Project
+- today's calendar events
+- the temperature outside (coming soon)
+
+It consists of:
+
+- the Exporter: a Python program that runs on your laptop, which fetches data from GitHub, formats it, and uploads it to a WebDAV server (I use [Fastmail][1]). This is designed to run as a cron job.
+
+- the Client: code that runs on the Inky Frame which downloads the data from WebDAV, and displays it beautifully on the e-paper screen. 
+
+Now you've no excuse not to know what's happening today. :)
 
 ```mermaid
 graph LR
@@ -26,6 +38,8 @@ graph LR
 
 
 ### Setting up the Exporter
+
+The exporter runs on your 
 
 1. Create and activate a virtual environment:
 ```
@@ -57,3 +71,4 @@ aider client/work.py
 - Sometimes Thonny doesn't recognise the Inky Frame at all. Try unplugging, plugging back in again, and then pressing the Stop/Reset button in Thonny.
 
 
+[1]: https://fastmail.com
